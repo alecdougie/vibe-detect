@@ -513,10 +513,67 @@ document.getElementById("menu-share")?.addEventListener("click", () => {
   exportImage();
 });
 
+document.getElementById("menu-howitworks")?.addEventListener("click", () => {
+  SoundEngine.click();
+  menuDropdown.classList.remove("open");
+  showOverlay("howitworks-page");
+});
+
 document.getElementById("menu-about")?.addEventListener("click", () => {
   SoundEngine.click();
   menuDropdown.classList.remove("open");
-  // TODO: about page functionality
+  showOverlay("about-page");
+});
+
+// ── Overlay pages (About, How It Works) ─────────────────
+
+let previousState = null;
+
+function showOverlay(pageId) {
+  // Remember what was visible so we can go back
+  previousState = {
+    ready: document.getElementById("ready").style.display,
+    loading: document.getElementById("loading").style.display,
+    results: document.getElementById("results").style.display,
+    empty: document.getElementById("empty").style.display,
+  };
+
+  // Hide all main views
+  document.getElementById("ready").style.display = "none";
+  document.getElementById("loading").style.display = "none";
+  document.getElementById("results").style.display = "none";
+  document.getElementById("empty").style.display = "none";
+
+  // Hide any other overlay that might be open
+  document.querySelectorAll(".overlay-page").forEach((p) => p.classList.remove("active"));
+
+  // Show requested overlay
+  document.getElementById(pageId).classList.add("active");
+}
+
+function hideOverlay() {
+  document.querySelectorAll(".overlay-page").forEach((p) => p.classList.remove("active"));
+
+  if (previousState) {
+    document.getElementById("ready").style.display = previousState.ready;
+    document.getElementById("loading").style.display = previousState.loading;
+    document.getElementById("results").style.display = previousState.results;
+    document.getElementById("empty").style.display = previousState.empty;
+    previousState = null;
+  } else {
+    // Fallback: show ready state
+    document.getElementById("ready").style.display = "block";
+  }
+}
+
+document.getElementById("about-back")?.addEventListener("click", () => {
+  SoundEngine.click();
+  hideOverlay();
+});
+
+document.getElementById("howitworks-back")?.addEventListener("click", () => {
+  SoundEngine.click();
+  hideOverlay();
 });
 
 // ── Toast notification ───────────────────────────────────

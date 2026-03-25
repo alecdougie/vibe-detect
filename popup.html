@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 400px;
+      min-height: 200px;
+      font-family: "IBM Plex Mono", "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      padding: 0;
+      font-size: 11px;
+      line-height: 1.5;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* ── CRT Scanline Overlay ─────────────────────── */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.2) 2px,
+        rgba(0, 0, 0, 0.2) 4px
+      );
+      z-index: 9999;
+    }
+
+    /* ── CRT Flicker on load ──────────────────────── */
+    body {
+      animation: crt-on 0.4s ease-out;
+    }
+
+    @keyframes crt-on {
+      0% { opacity: 0; filter: brightness(3) contrast(0.5); }
+      30% { opacity: 1; filter: brightness(1.5) contrast(0.8); }
+      50% { opacity: 0.8; filter: brightness(1); }
+      100% { opacity: 1; filter: brightness(1) contrast(1); }
+    }
+
+    /* ── Screen glow ──────────────────────────────── */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.3);
+      z-index: 9998;
+    }
+
+    /* ── Header ───────────────────────────────────── */
+    .header {
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid #333;
+      text-align: center;
+      position: relative;
+    }
+
+    .header-border {
+      color: #555;
+      font-size: 10px;
+      user-select: none;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .header-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #e0e0e0;
+      padding: 4px 0;
+    }
+
+    .header-meta {
+      font-size: 10px;
+      color: #666;
+    }
+
+    .header-meta span {
+      color: #555;
+    }
+
+    /* ── Header Buttons ───────────────────────────── */
+    .header-btn {
+      position: absolute;
+      top: 10px;
+      background: none;
+      border: 1px solid #333;
+      color: #888;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .header-btn:hover {
+      border-color: #e0e0e0;
+      color: #e0e0e0;
+    }
+
+    .header-btn.muted {
+      color: #ff3333;
+      border-color: #ff3333;
+    }
+
+    .btn-mute {
+      left: 16px;
+    }
+
+    .btn-menu {
+      right: 16px;
+    }
+
+    /* ── Dropdown Menu ────────────────────────────── */
+    .menu-dropdown {
+      display: none;
+      position: absolute;
+      top: 40px;
+      right: 16px;
+      background: #222;
+      border: 1px solid #444;
+      z-index: 100;
+      min-width: 180px;
+    }
+
+    .menu-dropdown.open {
+      display: block;
+    }
+
+    .menu-item {
+      display: block;
+      width: 100%;
+      background: none;
+      border: none;
+      border-bottom: 1px solid #333;
+      color: #ccc;
+      font-family: inherit;
+      font-size: 11px;
+      padding: 8px 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item:hover {
+      background: #333;
+      color: #e0e0e0;
+    }
+
+    .menu-item-label {
+      color: #666;
+      font-size: 10px;
+      margin-right: 6px;
+    }
+
+    /* ── Score Section ────────────────────────────── */
+    .score-section {
+      padding: 0 16px 16px;
+      border-bottom: 1px solid #333;
+    }
+
+    .score-label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 16px;
+      margin: 0 -16px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .score-number {
+      font-size: 22px;
+      font-weight: 700;
+      min-width: 52px;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .score-bar-track {
+      flex: 1;
+      height: 14px;
+      background: #2a2a2a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transition: width 0.05s linear;
+    }
+
+    .score-target {
+      font-size: 10px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .score-target .target-host {
+      color: #e0e0e0;
+    }
+
+    /* ── Verdict ──────────────────────────────────── */
+    .verdict-row {
+      margin-top: 8px;
+      padding: 6px 0;
+      border-top: 1px dashed #333;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .verdict-row .verdict-label {
+      color: #666;
+    }
+
+    .verdict-indicator {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+      animation: status-blink 1.2s ease-in-out infinite;
+    }
+
+    @keyframes status-blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .verdict-status-clean { color: #33ff33; }
+    .verdict-status-suspicious { color: #ffaa00; }
+    .verdict-status-vibe { color: #ff6600; }
+    .verdict-status-maximum { color: #ff3333; animation: blink-red 1s step-end infinite; }
+
+    @keyframes blink-red {
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Signals Section ──────────────────────────── */
+    .signals-section {
+      padding: 0 16px 16px;
+    }
+
+    .signals-header {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 16px;
+      margin: 0 -16px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .signals-list {
+    }
+
+    .signals-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .signals-list::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    .signals-list::-webkit-scrollbar-thumb {
+      background: #444;
+    }
+
+    .signal-line {
+      display: flex;
+      align-items: baseline;
+      padding: 3px 0;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .signal-prompt {
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    .signal-tag {
+      color: #4a9eff;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-right: 6px;
+    }
+
+    .signal-name {
+      color: #e0e0e0;
+      flex-shrink: 0;
+    }
+
+    .signal-dots {
+      color: #2a2a2a;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .signal-weight {
+      color: #ff6600;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .signal-desc {
+      padding-left: 18px;
+      font-size: 10px;
+      color: #666;
+      line-height: 1.3;
+      padding-bottom: 2px;
+    }
+
+    .signal-empty {
+      padding: 16px 0;
+      text-align: center;
+      color: #666;
+      font-size: 11px;
+    }
+
+    .show-all-btn {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 1px dashed #333;
+      color: #555;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 6px 0;
+      margin-top: 36px;
+      margin-bottom: 36px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .show-all-btn:hover {
+      border-color: #666;
+      color: #888;
+    }
+
+    .not-detected-list {
+      display: none;
+      margin-top: 6px;
+    }
+
+    .not-detected-list.open {
+      display: block;
+    }
+
+    .signal-not-detected {
+      display: flex;
+      align-items: baseline;
+      padding: 2px 0;
+      font-size: 10px;
+      color: #333;
+    }
+
+    .signal-not-detected .signal-tag {
+      color: #2a3a4a;
+    }
+
+    .signal-not-detected .signal-name {
+      color: #333;
+    }
+
+    .signal-not-detected .signal-dots {
+      color: #1f1f1f;
+    }
+
+    /* ── Footer ───────────────────────────────────── */
+    .footer {
+      position: sticky;
+      bottom: 0;
+      padding: 10px 16px 12px;
+      border-top: 1px solid #333;
+      text-align: center;
+      background: #1a1a1a;
+      z-index: 10;
+    }
+
+    .rescan-btn {
+      background: none;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 6px 20px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .rescan-btn:hover {
+      border-color: #e0e0e0;
+      color: #fff;
+    }
+
+    .rescan-btn:active {
+      border-color: #ffaa00;
+      color: #ffaa00;
+    }
+
+    .footer-note {
+      font-size: 9px;
+      color: #444;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Category Breakdown ─────────────────────────── */
+    .category-breakdown {
+      padding: 0 16px 16px;
+      border-bottom: 1px solid #333;
+    }
+
+    .category-breakdown-header {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 16px;
+      margin: 0 -16px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .cat-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .cat-label {
+      color: #4a9eff;
+      font-weight: 700;
+      min-width: 100px;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cat-bar {
+      flex: 1;
+      height: 10px;
+      background: #2a2a2a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cat-bar-fill {
+      height: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .cat-modifier {
+      font-size: 10px;
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px dashed #333;
+    }
+
+    /* ── Loading State ────────────────────────────── */
+    .loading {
+      padding: 24px 16px;
+    }
+
+    .loading-line {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 3px;
+    }
+
+    .loading-line .hl {
+      color: #e0e0e0;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 7px;
+      height: 12px;
+      background: #e0e0e0;
+      vertical-align: text-bottom;
+      animation: cursor-blink 0.8s step-end infinite;
+    }
+
+    @keyframes cursor-blink {
+      50% { opacity: 0; }
+    }
+
+    .loading-bar {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #555;
+    }
+
+    .loading-bar-inner {
+      color: #e0e0e0;
+      display: inline;
+    }
+
+    /* ── Empty State ──────────────────────────────── */
+    .empty-state {
+      padding: 30px 16px;
+      text-align: center;
+    }
+
+    .empty-divider {
+      color: #333;
+      font-size: 10px;
+      margin: 8px 0;
+      overflow: hidden;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .empty-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffaa00;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .empty-desc {
+      font-size: 11px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="header-btn btn-mute" id="btn-mute" title="Toggle sound">&#x266B;</button>
+    <button class="header-btn btn-menu" id="btn-menu" title="Menu">&#x2261;</button>
+    <div class="menu-dropdown" id="menu-dropdown">
+      <button class="menu-item" id="menu-export"><span class="menu-item-label">&gt;</span>Export Report</button>
+      <button class="menu-item" id="menu-about"><span class="menu-item-label">&gt;</span>About VIBE-DETECT</button>
+    </div>
+    <div class="header-border">+-----[ VIBE-DETECT v1.0.2 ]-----+</div>
+    <div class="header-title">Vibe Code Detector</div>
+    <div class="header-meta">SYS <span>//</span> HEURISTIC ANALYSIS ENGINE</div>
+  </div>
+
+  <div id="loading" class="loading">
+    <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.2 initialized</div>
+    <div class="loading-line">> Scanning target...</div>
+    <div class="loading-line">> Analyzing DOM structure<span class="cursor-blink"></span></div>
+    <div class="loading-bar">[<span class="loading-bar-inner" id="loading-bar-fill"></span><span id="loading-bar-empty"></span>]</div>
+  </div>
+
+  <div id="results" style="display: none;">
+    <div class="score-section">
+      <div class="score-label">// Threat Assessment</div>
+      <div class="score-row">
+        <div id="score-number" class="score-number">0</div>
+        <div class="score-bar-track" id="score-bar"></div>
+      </div>
+      <div class="score-target">TARGET: <span class="target-host" id="score-host">---</span></div>
+      <div class="score-target"><span id="score-signals">0</span> signal(s) intercepted</div>
+      <div class="verdict-row">
+        <span class="verdict-label">STATUS: </span><span id="verdict-status"></span>
+      </div>
+    </div>
+
+    <div class="category-breakdown">
+      <div class="category-breakdown-header">// Category Breakdown</div>
+      <div id="category-breakdown"></div>
+    </div>
+
+    <div class="signals-section">
+      <div class="signals-header">// Intercepted Signals</div>
+      <div class="signals-list" id="signals-list"></div>
+    </div>
+
+    <div class="footer">
+      <button class="rescan-btn" id="rescan">[ RESCAN ]</button>
+      <div class="footer-note">// Heuristic-based analysis -- results are probabilistic</div>
+    </div>
+  </div>
+
+  <div id="empty" class="empty-state" style="display: none;">
+    <div class="header-border">+-----[ VIBE-DETECT v1.0.2 ]-----+</div>
+    <div class="empty-divider">------------------------------------</div>
+    <div class="empty-title">No Target Acquired</div>
+    <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
+    <button class="rescan-btn" id="scan-btn">[ INITIATE SCAN ]</button>
+  </div>
+
+  <script src="sounds.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

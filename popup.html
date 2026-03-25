@@ -22,24 +22,6 @@
       overflow-x: hidden;
     }
 
-    /* ── CRT Scanline Overlay ─────────────────────── */
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.2) 2px,
-        rgba(0, 0, 0, 0.2) 4px
-      );
-      z-index: 9999;
-    }
 
     /* ── CRT Flicker on load ──────────────────────── */
     body {
@@ -103,7 +85,7 @@
     /* ── Header Buttons ───────────────────────────── */
     .header-btn {
       position: absolute;
-      top: 10px;
+      top: 16px;
       background: none;
       border: 1px solid #333;
       color: #888;
@@ -129,6 +111,7 @@
     .header-btn.muted {
       color: #ff3333;
       border-color: #ff3333;
+      text-decoration: line-through;
     }
 
     .btn-mute {
@@ -429,7 +412,9 @@
       background: none;
       color: #e0e0e0;
       border: 1px solid #555;
-      padding: 6px 20px;
+      padding: 7px 20px;
+      width: 100%;
+      box-sizing: border-box;
       font-family: inherit;
       font-size: 11px;
       font-weight: 700;
@@ -449,11 +434,10 @@
       color: #ffaa00;
     }
 
-    .footer-note {
-      font-size: 9px;
+    .rescan-btn:disabled {
       color: #444;
-      margin-top: 6px;
-      letter-spacing: 0.5px;
+      border-color: #333;
+      cursor: not-allowed;
     }
 
     /* ── Category Breakdown ─────────────────────────── */
@@ -510,9 +494,30 @@
       border-top: 1px dashed #333;
     }
 
-    /* ── Loading State ────────────────────────────── */
-    .loading {
-      padding: 24px 16px;
+    /* ── Scan State (ready + loading) ────────────── */
+    .scan-state {
+      padding: 0 16px 16px;
+    }
+
+    .scan-state-header {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 16px;
+      margin: 0 -16px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .scan-state-body {
+      padding: 0;
+    }
+
+    .scan-state-footer {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #333;
     }
 
     .loading-line {
@@ -539,14 +544,21 @@
     }
 
     .loading-bar {
-      margin-top: 10px;
-      font-size: 11px;
-      color: #555;
+      margin-top: 12px;
+      height: 14px;
+      background: #2a2a2a;
+      position: relative;
+      overflow: hidden;
     }
 
-    .loading-bar-inner {
-      color: #e0e0e0;
-      display: inline;
+    .loading-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #e0e0e0;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transition: width 0.08s linear;
     }
 
     /* ── Empty State ──────────────────────────────── */
@@ -589,16 +601,31 @@
       <button class="menu-item" id="menu-export"><span class="menu-item-label">&gt;</span>Export Report</button>
       <button class="menu-item" id="menu-about"><span class="menu-item-label">&gt;</span>About VIBE-DETECT</button>
     </div>
-    <div class="header-border">+-----[ VIBE-DETECT v1.0.2 ]-----+</div>
+    <div class="header-border">+-----[ VIBE-DETECT v1.0.3 ]-----+</div>
     <div class="header-title">Vibe Code Detector</div>
-    <div class="header-meta">SYS <span>//</span> HEURISTIC ANALYSIS ENGINE</div>
+    <div class="header-meta">INTERNET SLOP ENGINE ACTIVE</div>
   </div>
 
-  <div id="loading" class="loading">
-    <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.2 initialized</div>
-    <div class="loading-line">> Scanning target...</div>
-    <div class="loading-line">> Analyzing DOM structure<span class="cursor-blink"></span></div>
-    <div class="loading-bar">[<span class="loading-bar-inner" id="loading-bar-fill"></span><span id="loading-bar-empty"></span>]</div>
+  <div id="ready" class="scan-state">
+    <div class="scan-state-header">// System Status</div>
+    <div class="scan-state-body">
+      <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.3 initialized</div>
+      <div class="loading-line">> This thing was vibe coded, mistakes probable</div>
+      <div class="loading-line">> Target acquired.</div>
+      <div class="loading-line">> Awaiting command<span class="cursor-blink"></span></div>
+    </div>
+    <div class="scan-state-footer">
+      <button class="rescan-btn" id="ready-scan-btn">[ INITIATE SCAN ]</button>
+    </div>
+  </div>
+
+  <div id="loading" class="scan-state" style="display: none;">
+    <div class="scan-state-header">// Scanning Target</div>
+    <div class="scan-state-body">
+      <div class="loading-line">> Injecting analysis protocol...</div>
+      <div class="loading-line">> Analyzing DOM structure<span class="cursor-blink"></span></div>
+      <div class="loading-bar"><div class="loading-bar-fill" id="loading-bar-fill"></div></div>
+    </div>
   </div>
 
   <div id="results" style="display: none;">
@@ -627,16 +654,13 @@
 
     <div class="footer">
       <button class="rescan-btn" id="rescan">[ RESCAN ]</button>
-      <div class="footer-note">// Heuristic-based analysis -- results are probabilistic</div>
     </div>
   </div>
 
   <div id="empty" class="empty-state" style="display: none;">
-    <div class="header-border">+-----[ VIBE-DETECT v1.0.2 ]-----+</div>
-    <div class="empty-divider">------------------------------------</div>
     <div class="empty-title">No Target Acquired</div>
     <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
-    <button class="rescan-btn" id="scan-btn">[ INITIATE SCAN ]</button>
+    <button class="rescan-btn" id="scan-btn" disabled>[ INITIATE SCAN ]</button>
   </div>
 
   <script src="sounds.js"></script>

@@ -142,10 +142,12 @@ function renderCategoryBar(capped, cap) {
 }
 
 let hasRendered = false;
+let currentResult = null;
 
 function renderResults(data) {
   if (hasRendered) return;
   hasRendered = true;
+  currentResult = data;
 
   document.getElementById("ready").style.display = "none";
   document.getElementById("loading").style.display = "none";
@@ -502,7 +504,13 @@ menuDropdown?.addEventListener("click", (e) => {
 document.getElementById("menu-export")?.addEventListener("click", () => {
   SoundEngine.click();
   menuDropdown.classList.remove("open");
-  // TODO: export report functionality
+  exportJSON();
+});
+
+document.getElementById("menu-share")?.addEventListener("click", () => {
+  SoundEngine.click();
+  menuDropdown.classList.remove("open");
+  exportImage();
 });
 
 document.getElementById("menu-about")?.addEventListener("click", () => {
@@ -510,3 +518,350 @@ document.getElementById("menu-about")?.addEventListener("click", () => {
   menuDropdown.classList.remove("open");
   // TODO: about page functionality
 });
+
+// ── Toast notification ───────────────────────────────────
+
+function showToast(message) {
+  const toast = document.getElementById("export-toast");
+  toast.textContent = "> " + message;
+  toast.classList.add("visible");
+  setTimeout(() => toast.classList.remove("visible"), 2000);
+}
+
+// ── Export Report (JSON) ─────────────────────────────────
+
+function buildExportJSON(data) {
+  const triggeredNames = new Set(data.signals.map((s) => s.name));
+  const undetected = ALL_KNOWN_SIGNALS.filter(
+    (s) => !triggeredNames.has(s.name)
+  );
+
+  return {
+    meta: {
+      tool: "VIBE-DETECT",
+      version: "1.0.3",
+      exportedAt: new Date().toISOString(),
+    },
+    target: {
+      url: data.url,
+      hostname: data.hostname,
+      scannedAt: new Date(data.timestamp).toISOString(),
+    },
+    score: {
+      vibeScore: data.vibeScore,
+      rawScore: data.rawScore,
+      verdict: getVerdict(data.vibeScore).text,
+      multiplierApplied: data.multiplierApplied,
+      totalReduction: data.totalReduction || 0,
+    },
+    categoryBreakdown: Object.fromEntries(
+      Object.entries(data.categoryScores).map(([cat, info]) => [
+        cat,
+        { scored: info.capped, cap: info.cap, raw: info.raw },
+      ])
+    ),
+    detectedSignals: data.signals.map((s) => ({
+      category: s.category,
+      name: s.name,
+      description: s.description,
+      weight: s.weight,
+    })),
+    cleanSignals: (data.negativeSignals || []).map((s) => ({
+      name: s.name,
+      description: s.description,
+      points: s.points,
+    })),
+    undetectedSignals: undetected.map((s) => ({
+      category: s.category,
+      name: s.name,
+    })),
+    totalSignals: data.totalSignals,
+    totalPossibleSignals: ALL_KNOWN_SIGNALS.length,
+  };
+}
+
+async function exportJSON() {
+  if (!currentResult) {
+    showToast("Run a scan first");
+    return;
+  }
+  const json = JSON.stringify(buildExportJSON(currentResult), null, 2);
+  try {
+    await navigator.clipboard.writeText(json);
+    showToast("JSON copied to clipboard");
+  } catch (e) {
+    showToast("Copy failed");
+  }
+}
+
+// ── Share Report (Image) ─────────────────────────────────
+
+function truncateText(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  while (ctx.measureText(text + "...").width > maxWidth && text.length > 0) {
+    text = text.slice(0, -1);
+  }
+  return text + "...";
+}
+
+function drawDivider(ctx, y, W, pad) {
+  ctx.strokeStyle = "#333";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, y);
+  ctx.lineTo(W - pad, y);
+  ctx.stroke();
+}
+
+function calculateCanvasHeight(data) {
+  const negCount = (data.negativeSignals || []).length;
+
+  let h = 0;
+  h += 90; // header
+  h += 50; // URL + date
+  h += 110; // score + bar + verdict
+  h += 30; // category header
+  h += Object.keys(data.categoryScores).length * 24; // category rows
+  h += 20; // spacing
+  h += 30; // signals header
+  h += data.signals.length * 22; // detected signals
+  if (negCount > 0) {
+    h += 30; // clean signals header
+    h += negCount * 22;
+  }
+  h += 60; // footer
+  return Math.max(500, h);
+}
+
+async function exportImage() {
+  if (!currentResult) {
+    showToast("Run a scan first");
+    return;
+  }
+
+  await document.fonts.ready;
+
+  const data = currentResult;
+  const W = 600;
+  const H = calculateCanvasHeight(data);
+  const canvas = document.createElement("canvas");
+  const SCALE = 2;
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(SCALE, SCALE);
+
+  const FONT =
+    '"IBM Plex Mono", "SF Mono", "Cascadia Code", "Consolas", monospace';
+  const BG = "#1a1a1a";
+  const TEXT = "#e0e0e0";
+  const DIM = "#666";
+  const PAD = 30;
+
+  let y = 0;
+
+  // -- Background --
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, W, H);
+
+  // -- Subtle CRT scanlines --
+  for (let i = 0; i < H; i += 4) {
+    ctx.fillStyle = "rgba(0,0,0,0.06)";
+    ctx.fillRect(0, i, W, 1);
+  }
+
+  // -- Header --
+  y = 30;
+  ctx.fillStyle = "#555";
+  ctx.font = "10px " + FONT;
+  ctx.textAlign = "center";
+  ctx.fillText("+-----[ VIBE-DETECT v1.0.3 ]-----+", W / 2, y);
+
+  y += 24;
+  ctx.fillStyle = TEXT;
+  ctx.font = "bold 16px " + FONT;
+  ctx.fillText("VIBE CODE DETECTOR", W / 2, y);
+
+  y += 18;
+  ctx.fillStyle = DIM;
+  ctx.font = "10px " + FONT;
+  ctx.fillText("INTERNET SLOP ENGINE ACTIVE", W / 2, y);
+
+  // -- Divider --
+  y += 16;
+  drawDivider(ctx, y, W, PAD);
+
+  // -- Target --
+  y += 20;
+  ctx.textAlign = "left";
+  ctx.fillStyle = DIM;
+  ctx.font = "10px " + FONT;
+  ctx.fillText("TARGET:", PAD, y);
+  ctx.fillStyle = TEXT;
+  ctx.fillText(
+    truncateText(ctx, data.hostname, W - PAD * 2 - 60),
+    PAD + 65,
+    y
+  );
+
+  y += 16;
+  ctx.fillStyle = DIM;
+  ctx.fillText(
+    "SCANNED: " + new Date(data.timestamp).toLocaleString(),
+    PAD,
+    y
+  );
+
+  // -- Divider --
+  y += 16;
+  drawDivider(ctx, y, W, PAD);
+
+  // -- Score --
+  y += 10;
+  const scoreColor = getScoreColor(data.vibeScore);
+  ctx.fillStyle = scoreColor;
+  ctx.font = "bold 48px " + FONT;
+  ctx.fillText(data.vibeScore + "/100", PAD, y + 42);
+
+  // Score bar
+  const barX = PAD;
+  const barY = y + 52;
+  const barW = W - PAD * 2;
+  const barH = 14;
+  ctx.fillStyle = "#2a2a2a";
+  ctx.fillRect(barX, barY, barW, barH);
+  ctx.fillStyle = scoreColor;
+  ctx.fillRect(barX, barY, barW * (data.vibeScore / 100), barH);
+
+  // Verdict
+  y = barY + 30;
+  const verdict = getVerdict(data.vibeScore);
+  ctx.fillStyle = DIM;
+  ctx.font = "bold 12px " + FONT;
+  ctx.fillText("STATUS: ", PAD, y);
+  ctx.fillStyle = scoreColor;
+  ctx.fillText(verdict.text, PAD + 75, y);
+
+  // -- Divider --
+  y += 16;
+  drawDivider(ctx, y, W, PAD);
+
+  // -- Category Breakdown --
+  y += 20;
+  ctx.fillStyle = DIM;
+  ctx.font = "10px " + FONT;
+  ctx.fillText("// CATEGORY BREAKDOWN", PAD, y);
+
+  const catTags = {
+    techstack: "TECH",
+    source: "SRCE",
+    content: "CNTN",
+    design: "DSGN",
+    security: "SECU",
+    infra: "INFR",
+    runtime: "RNTM",
+  };
+
+  y += 8;
+  for (const [cat, info] of Object.entries(data.categoryScores)) {
+    y += 24;
+    const tag = catTags[cat] || cat.toUpperCase();
+    const label = `[${tag}] ${info.capped}/${info.cap}`;
+    ctx.fillStyle = TEXT;
+    ctx.font = "11px " + FONT;
+    ctx.fillText(label, PAD, y);
+
+    // Bar
+    const catBarX = PAD + 140;
+    const catBarW = W - PAD - catBarX - 10;
+    const catBarH = 10;
+    const catBarY = y - 8;
+    ctx.fillStyle = "#2a2a2a";
+    ctx.fillRect(catBarX, catBarY, catBarW, catBarH);
+    const pct = info.cap > 0 ? info.capped / info.cap : 0;
+    ctx.fillStyle = pct > 0.6 ? "#ff6600" : pct > 0.3 ? "#ffaa00" : "#33ff33";
+    ctx.fillRect(catBarX, catBarY, catBarW * pct, catBarH);
+  }
+
+  // -- Divider --
+  y += 16;
+  drawDivider(ctx, y, W, PAD);
+
+  // -- Detected Signals --
+  y += 20;
+  ctx.fillStyle = DIM;
+  ctx.font = "10px " + FONT;
+  ctx.fillText("// INTERCEPTED SIGNALS", PAD, y);
+
+  const sortedSignals = [...data.signals].sort((a, b) => b.weight - a.weight);
+  for (const sig of sortedSignals) {
+    y += 22;
+    const tag = catTags[sig.category] || sig.category.toUpperCase();
+    ctx.fillStyle = "#555";
+    ctx.font = "11px " + FONT;
+    ctx.fillText(`[${tag}]`, PAD, y);
+    ctx.fillStyle = TEXT;
+    ctx.fillText(
+      truncateText(ctx, sig.name, W - PAD * 2 - 160),
+      PAD + 55,
+      y
+    );
+    ctx.fillStyle = getWeightColor(sig.weight);
+    ctx.textAlign = "right";
+    ctx.fillText("+" + sig.weight, W - PAD, y);
+    ctx.textAlign = "left";
+  }
+
+  // -- Clean Signals --
+  if (data.negativeSignals && data.negativeSignals.length > 0) {
+    y += 16;
+    drawDivider(ctx, y, W, PAD);
+    y += 20;
+    ctx.fillStyle = DIM;
+    ctx.font = "10px " + FONT;
+    ctx.fillText("// CLEAN SIGNALS", PAD, y);
+
+    for (const sig of data.negativeSignals) {
+      y += 22;
+      ctx.fillStyle = "#33ff33";
+      ctx.font = "11px " + FONT;
+      ctx.fillText("[PASS]", PAD, y);
+      ctx.fillStyle = TEXT;
+      ctx.fillText(
+        truncateText(ctx, sig.name, W - PAD * 2 - 160),
+        PAD + 60,
+        y
+      );
+      ctx.fillStyle = "#33ff33";
+      ctx.textAlign = "right";
+      ctx.fillText("-" + sig.points, W - PAD, y);
+      ctx.textAlign = "left";
+    }
+  }
+
+  // -- Footer --
+  y += 30;
+  drawDivider(ctx, y, W, PAD);
+  y += 20;
+  ctx.fillStyle = "#555";
+  ctx.font = "10px " + FONT;
+  ctx.textAlign = "center";
+  ctx.fillText("Generated by VIBE-DETECT v1.0.3", W / 2, y);
+  y += 16;
+  ctx.fillText("Download on Chrome today :]", W / 2, y);
+  ctx.textAlign = "left";
+
+  // -- Download --
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "vibe-detect-" + data.hostname + ".png";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, "image/png");
+
+  showToast("Image downloaded");
+}

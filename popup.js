@@ -312,20 +312,19 @@ let pendingResult = null;
 
 function startLoadingBar() {
   const fillEl = document.getElementById("loading-bar-fill");
-  const emptyEl = document.getElementById("loading-bar-empty");
-  if (!fillEl || !emptyEl) return;
+  if (!fillEl) return;
 
-  const totalChars = 30;
+  const totalSteps = 30;
   let pos = 0;
   pendingResult = null;
+  fillEl.style.width = "0%";
 
   // Fill the bar over ~2.5 seconds, then show results
   loadingInterval = setInterval(() => {
     pos++;
-    fillEl.textContent = "\u2588".repeat(pos);
-    emptyEl.textContent = "\u2591".repeat(totalChars - pos);
+    fillEl.style.width = ((pos / totalSteps) * 100) + "%";
 
-    if (pos >= totalChars) {
+    if (pos >= totalSteps) {
       stopLoadingBar();
       if (pendingResult) {
         renderResults(pendingResult);

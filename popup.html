@@ -591,6 +591,28 @@
       line-height: 1.5;
       margin-bottom: 16px;
     }
+
+    /* ── Toast Notification ──────────────────────── */
+    .export-toast {
+      position: fixed;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #e0e0e0;
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 8px 16px;
+      border: 1px solid #555;
+      z-index: 9999;
+      transition: bottom 0.3s ease;
+      white-space: nowrap;
+    }
+    .export-toast.visible {
+      bottom: 16px;
+    }
   </style>
 </head>
 <body>
@@ -598,7 +620,8 @@
     <button class="header-btn btn-mute" id="btn-mute" title="Toggle sound">&#x266B;</button>
     <button class="header-btn btn-menu" id="btn-menu" title="Menu">&#x2261;</button>
     <div class="menu-dropdown" id="menu-dropdown">
-      <button class="menu-item" id="menu-export"><span class="menu-item-label">&gt;</span>Export Report</button>
+      <button class="menu-item" id="menu-export"><span class="menu-item-label">&gt;</span>Export Report (JSON)</button>
+      <button class="menu-item" id="menu-share"><span class="menu-item-label">&gt;</span>Share Report (Image)</button>
       <button class="menu-item" id="menu-about"><span class="menu-item-label">&gt;</span>About VIBE-DETECT</button>
     </div>
     <div class="header-border">+-----[ VIBE-DETECT v1.0.3 ]-----+</div>
@@ -662,6 +685,8 @@
     <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
     <button class="rescan-btn" id="scan-btn" disabled>[ INITIATE SCAN ]</button>
   </div>
+
+  <div id="export-toast" class="export-toast"></div>
 
   <script src="sounds.js"></script>
   <script src="popup.js"></script>

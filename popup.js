@@ -147,6 +147,7 @@ function renderResults(data) {
   if (hasRendered) return;
   hasRendered = true;
 
+  document.getElementById("ready").style.display = "none";
   document.getElementById("loading").style.display = "none";
   document.getElementById("results").style.display = "block";
   document.getElementById("empty").style.display = "none";
@@ -307,6 +308,7 @@ function renderResults(data) {
 // ── Loading bar animation ────────────────────────────────
 
 let loadingInterval = null;
+let pendingResult = null;
 
 function startLoadingBar() {
   const fillEl = document.getElementById("loading-bar-fill");
@@ -315,16 +317,22 @@ function startLoadingBar() {
 
   const totalChars = 30;
   let pos = 0;
-  let direction = 1;
+  pendingResult = null;
 
+  // Fill the bar over ~2.5 seconds, then show results
   loadingInterval = setInterval(() => {
-    pos += direction;
-    if (pos >= totalChars) direction = -1;
-    if (pos <= 0) direction = 1;
-
+    pos++;
     fillEl.textContent = "\u2588".repeat(pos);
     emptyEl.textContent = "\u2591".repeat(totalChars - pos);
-  }, 50);
+
+    if (pos >= totalChars) {
+      stopLoadingBar();
+      if (pendingResult) {
+        renderResults(pendingResult);
+        pendingResult = null;
+      }
+    }
+  }, 80);
 }
 
 function stopLoadingBar() {
@@ -334,10 +342,20 @@ function stopLoadingBar() {
   }
 }
 
+function queueResult(result) {
+  // If loading bar is still running, hold the result until it finishes
+  if (loadingInterval) {
+    pendingResult = result;
+  } else {
+    renderResults(result);
+  }
+}
+
 // ── Scan logic ───────────────────────────────────────────
 
 function triggerScan() {
   hasRendered = false;
+  document.getElementById("ready").style.display = "none";
   document.getElementById("loading").style.display = "block";
   document.getElementById("results").style.display = "none";
   document.getElementById("empty").style.display = "none";
@@ -384,8 +402,7 @@ function triggerScan() {
             const result = data[storageKey] || data.lastResult;
             if (result && result.timestamp) {
               clearInterval(pollInterval);
-              stopLoadingBar();
-              renderResults(result);
+              queueResult(result);
             } else if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
               stopLoadingBar();
@@ -398,6 +415,7 @@ function triggerScan() {
 }
 
 function showEmpty() {
+  document.getElementById("ready").style.display = "none";
   document.getElementById("loading").style.display = "none";
   document.getElementById("results").style.display = "none";
   document.getElementById("empty").style.display = "block";
@@ -407,12 +425,11 @@ function showEmpty() {
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "VIBE_RESULT") {
-    stopLoadingBar();
-    renderResults(msg.data);
+    queueResult(msg.data);
   }
 });
 
-// Check if we already have a result for this tab
+// Show ready state — wait for user to initiate scan
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
   if (!tabs[0] || !tabs[0].url || tabs[0].url.startsWith("chrome://")) {
     showEmpty();
@@ -424,7 +441,11 @@ chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (data[storageKey] && data[storageKey].url === tabs[0].url) {
       renderResults(data[storageKey]);
     } else {
-      triggerScan();
+      // Show ready state, wait for user input
+      document.getElementById("ready").style.display = "block";
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("results").style.display = "none";
+      document.getElementById("empty").style.display = "none";
     }
   });
 });
@@ -434,6 +455,10 @@ document.getElementById("rescan")?.addEventListener("click", () => {
   triggerScan();
 });
 document.getElementById("scan-btn")?.addEventListener("click", () => {
+  SoundEngine.click();
+  triggerScan();
+});
+document.getElementById("ready-scan-btn")?.addEventListener("click", () => {
   SoundEngine.click();
   triggerScan();
 });

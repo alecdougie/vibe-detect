@@ -22,24 +22,7 @@
       overflow-x: hidden;
     }
 
-    /* ── CRT Scanline Overlay ─────────────────────── */
-    body::after {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.2) 2px,
-        rgba(0, 0, 0, 0.2) 4px
-      );
-      z-index: 9999;
-    }
+    /* ── CRT Scanline Overlay (disabled) ─────────── */
 
     /* ── CRT Flicker on load ──────────────────────── */
     body {
@@ -594,7 +577,15 @@
     <div class="header-meta">SYS <span>//</span> HEURISTIC ANALYSIS ENGINE</div>
   </div>
 
-  <div id="loading" class="loading">
+  <div id="ready" class="loading">
+    <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.2 initialized</div>
+    <div class="loading-line">> Target acquired. Awaiting command<span class="cursor-blink"></span></div>
+    <div style="text-align: center; margin-top: 16px;">
+      <button class="rescan-btn" id="ready-scan-btn">[ INITIATE SCAN ]</button>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" style="display: none;">
     <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.2 initialized</div>
     <div class="loading-line">> Scanning target...</div>
     <div class="loading-line">> Analyzing DOM structure<span class="cursor-blink"></span></div>

@@ -693,15 +693,49 @@ function hideOverlay() {
   document.querySelectorAll(".overlay-page").forEach((p) => p.classList.remove("active"));
 
   if (previousState) {
-    document.getElementById("ready").style.display = previousState.ready;
-    document.getElementById("loading").style.display = previousState.loading;
-    document.getElementById("results").style.display = previousState.results;
-    document.getElementById("empty").style.display = previousState.empty;
+    // Check if any view was actually visible (non-empty, non-"none")
+    const anyVisible = Object.values(previousState).some(
+      (v) => v && v !== "none"
+    );
+
+    if (anyVisible) {
+      document.getElementById("ready").style.display = previousState.ready || "none";
+      document.getElementById("loading").style.display = previousState.loading || "none";
+      document.getElementById("results").style.display = previousState.results || "none";
+      document.getElementById("empty").style.display = previousState.empty || "none";
+    } else {
+      // All states were empty/none — figure out what to show
+      restoreDefaultView();
+    }
     previousState = null;
   } else {
-    // Fallback: show ready state
-    document.getElementById("ready").style.display = "block";
+    restoreDefaultView();
   }
+}
+
+function restoreDefaultView() {
+  // Check if we have results for the current tab
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0] || !tabs[0].url || tabs[0].url.startsWith("chrome://")) {
+      showEmpty();
+      return;
+    }
+    const storageKey = "result_tab_" + tabs[0].id;
+    chrome.storage.local.get([storageKey], (data) => {
+      if (data[storageKey] && data[storageKey].url === tabs[0].url) {
+        // Results exist but may already be rendered
+        document.getElementById("ready").style.display = "none";
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("results").style.display = "block";
+        document.getElementById("empty").style.display = "none";
+      } else {
+        document.getElementById("ready").style.display = "block";
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("results").style.display = "none";
+        document.getElementById("empty").style.display = "none";
+      }
+    });
+  });
 }
 
 document.getElementById("about-back")?.addEventListener("click", () => {

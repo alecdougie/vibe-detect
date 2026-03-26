@@ -438,15 +438,13 @@ function renderResults(data) {
   const deepScanBtn = document.getElementById("deep-scan-btn");
   if (deepScanBtn) {
     deepScanBtn.style.display = "block";
-    const tooltip = deepScanBtn.querySelector(".tooltip");
     if (data.internalLinks && data.internalLinks.length > 0) {
       deepScanBtn.disabled = false;
-      // Preserve tooltip span, update text
-      deepScanBtn.innerHTML = "[ DEEP SCAN (" + Math.min(5, data.internalLinks.length) + " PG) ]" +
+      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>DEEP SCAN (' + Math.min(5, data.internalLinks.length) + ' PG)' +
         '<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span>';
     } else {
       deepScanBtn.disabled = true;
-      deepScanBtn.innerHTML = "[ NO LINKS ]" +
+      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>NO LINKS' +
         '<span class="tooltip">No internal links found on this page to deep scan.</span>';
     }
   }
@@ -940,7 +938,7 @@ function startDeepScan() {
   const btn = document.getElementById("deep-scan-btn");
   if (btn) {
     btn.disabled = true;
-    btn.textContent = "[ SCANNING... ]";
+    btn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>SCANNING...';
   }
 
   SoundEngine.scanning();
@@ -957,7 +955,7 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "DEEP_SCAN_PROGRESS") {
     const btn = document.getElementById("deep-scan-btn");
     if (btn) {
-      btn.textContent = "[ SCANNING " + msg.current + "/" + msg.total + "... ]";
+      btn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>SCANNING ' + msg.current + '/' + msg.total + '...';
     }
   }
 
@@ -995,7 +993,7 @@ function renderDeepScanResults(data) {
   const btn = document.getElementById("deep-scan-btn");
   if (btn) {
     btn.disabled = false;
-    btn.textContent = "[ DEEP SCAN COMPLETE ]";
+    btn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>SCAN COMPLETE';
   }
 
   showOverlay("deepscan-page");

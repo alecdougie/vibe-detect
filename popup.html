@@ -414,12 +414,12 @@
       display: block;
     }
 
-    .rescan-btn {
+    .scan-btn-base {
       background: none;
       color: #e0e0e0;
       border: 1px solid #555;
-      padding: 7px 20px;
-      width: 100%;
+      padding: 7px 10px;
+      flex: 1;
       box-sizing: border-box;
       font-family: inherit;
       font-size: 11px;
@@ -430,20 +430,29 @@
       transition: border-color 0.15s, color 0.15s;
     }
 
-    .rescan-btn:hover {
+    .scan-btn-base:hover {
       border-color: #e0e0e0;
       color: #fff;
     }
 
-    .rescan-btn:active {
+    .scan-btn-base:active {
       border-color: #ffaa00;
       color: #ffaa00;
     }
 
-    .rescan-btn:disabled {
+    .scan-btn-base:disabled {
       color: #444;
       border-color: #333;
       cursor: not-allowed;
+    }
+
+    .btn-icon {
+      margin-right: 8px;
+      color: #888;
+    }
+
+    .scan-btn-base:hover .btn-icon {
+      color: #e0e0e0;
     }
 
     /* ── Category Breakdown ─────────────────────────── */
@@ -847,33 +856,9 @@
       color: #666;
     }
 
-    /* ── Deep Scan Button ─────────────────────── */
+    /* ── Deep Scan Button (extends scan-btn-base) ── */
     .deep-scan-btn {
-      background: none;
-      color: #888;
-      border: 1px dashed #444;
-      padding: 7px 10px;
-      flex: 1;
-      box-sizing: border-box;
-      font-family: inherit;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
       position: relative;
-    }
-
-    .deep-scan-btn:hover {
-      border-color: #888;
-      color: #e0e0e0;
-    }
-
-    .deep-scan-btn:disabled {
-      color: #444;
-      border-color: #333;
-      cursor: not-allowed;
     }
 
     /* ── Deep Scan Tooltip ────────────────────── */
@@ -903,10 +888,6 @@
     .deep-scan-btn:hover .tooltip {
       visibility: visible;
       opacity: 1;
-    }
-
-    .rescan-btn {
-      flex: 1;
     }
 
     /* ── Deep Scan Results ─────────────────────── */
@@ -996,8 +977,8 @@
       <div class="loading-line">> Awaiting command<span class="cursor-blink"></span></div>
     </div>
     <div class="scan-state-footer">
-      <button class="rescan-btn" id="ready-scan-btn">[ INITIATE SCAN ]</button>
-      <button class="deep-scan-btn" id="ready-deep-scan-btn">[ DEEP SCAN ]<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
+      <button class="scan-btn-base" id="ready-scan-btn"><span class="btn-icon">&gt;</span>INITIATE SCAN</button>
+      <button class="scan-btn-base deep-scan-btn" id="ready-deep-scan-btn"><span class="btn-icon">&gt;&gt;</span>DEEP SCAN<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 
@@ -1040,15 +1021,15 @@
     </div>
 
     <div class="footer">
-      <button class="rescan-btn" id="rescan">[ RESCAN ]</button>
-      <button class="deep-scan-btn" id="deep-scan-btn" style="display:none">[ DEEP SCAN ]<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
+      <button class="scan-btn-base" id="rescan"><span class="btn-icon">&gt;</span>RESCAN</button>
+      <button class="scan-btn-base deep-scan-btn" id="deep-scan-btn" style="display:none"><span class="btn-icon">&gt;&gt;</span>DEEP SCAN<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 
   <div id="empty" class="empty-state" style="display: none;">
     <div class="empty-title">No Target Acquired</div>
     <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
-    <button class="rescan-btn" id="scan-btn" disabled>[ INITIATE SCAN ]</button>
+    <button class="scan-btn-base" id="scan-btn" disabled><span class="btn-icon">&gt;</span>INITIATE SCAN</button>
   </div>
 
   <!-- ── About Page ──────────────────────────── -->

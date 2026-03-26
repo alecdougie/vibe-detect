@@ -634,6 +634,18 @@
       border-bottom: 1px solid #333;
     }
 
+    .overlay-footer {
+      position: sticky;
+      bottom: 0;
+      padding: 10px 0 12px;
+      border-top: 1px solid #333;
+      background: #1a1a1a;
+      z-index: 10;
+      margin: 16px -16px 0;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
     .overlay-back-btn {
       background: none;
       color: #e0e0e0;
@@ -648,7 +660,6 @@
       text-transform: uppercase;
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
-      margin-top: 16px;
     }
 
     .overlay-back-btn:hover {
@@ -1025,7 +1036,9 @@
     <div class="overlay-line"><span class="dim">> Heuristic scoring with category caps</span></div>
     <div class="overlay-line"><span class="dim">> Stack multiplier + clean signal bonuses</span></div>
 
-    <button class="overlay-back-btn" id="about-back">[ BACK ]</button>
+    <div class="overlay-footer">
+      <button class="overlay-back-btn" id="about-back">[ BACK ]</button>
+    </div>
   </div>
 
   <!-- ── How It Works Page ─────────────────────── -->
@@ -1110,22 +1123,28 @@
 
     <div class="overlay-line"><span class="dim">Final score = sum of capped categories × multiplier − clean bonuses, clamped to 0-100</span></div>
 
-    <button class="overlay-back-btn" id="howitworks-back">[ BACK ]</button>
+    <div class="overlay-footer">
+      <button class="overlay-back-btn" id="howitworks-back">[ BACK ]</button>
+    </div>
   </div>
 
   <!-- ── Scan History Page ──────────────────────── -->
   <div id="history-page" class="overlay-page">
     <div class="overlay-section-header">// Scan History</div>
     <div id="history-list"></div>
-    <button class="clear-history-btn" id="history-clear">[ CLEAR HISTORY ]</button>
-    <button class="overlay-back-btn" id="history-back">[ BACK ]</button>
+    <div class="overlay-footer">
+      <button class="clear-history-btn" id="history-clear">[ CLEAR HISTORY ]</button>
+      <button class="overlay-back-btn" id="history-back">[ BACK ]</button>
+    </div>
   </div>
 
   <!-- ── Deep Scan Results Page ───────────────────── -->
   <div id="deepscan-page" class="overlay-page">
     <div class="overlay-section-header">// Deep Scan Results</div>
     <div id="deepscan-results"></div>
-    <button class="overlay-back-btn" id="deepscan-back">[ BACK TO RESULTS ]</button>
+    <div class="overlay-footer">
+      <button class="overlay-back-btn" id="deepscan-back">[ BACK TO RESULTS ]</button>
+    </div>
   </div>
 
   <div id="export-toast" class="export-toast"></div>

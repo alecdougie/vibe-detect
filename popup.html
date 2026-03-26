@@ -529,10 +529,9 @@
     }
 
     .scan-state-footer {
-      text-align: center;
-      margin-top: 16px;
-      padding-top: 16px;
+      padding: 10px 0 12px;
       border-top: 1px solid #333;
+      margin-top: 16px;
       display: flex;
       gap: 6px;
     }
@@ -580,8 +579,16 @@
 
     /* ── Empty State ──────────────────────────────── */
     .empty-state {
-      padding: 30px 16px;
+      padding: 30px 16px 0;
       text-align: center;
+    }
+
+    .empty-footer {
+      padding: 10px 0 12px;
+      border-top: 1px solid #333;
+      margin-top: 16px;
+      display: flex;
+      gap: 6px;
     }
 
     .empty-divider {
@@ -654,34 +661,13 @@
     .overlay-footer {
       position: sticky;
       bottom: 0;
-      padding: 10px 0 12px;
+      padding: 10px 16px 12px;
       border-top: 1px solid #333;
       background: #1a1a1a;
       z-index: 10;
-      margin: 16px -16px 0;
-      padding-left: 16px;
-      padding-right: 16px;
-    }
-
-    .overlay-back-btn {
-      background: none;
-      color: #e0e0e0;
-      border: 1px solid #555;
-      padding: 7px 20px;
-      width: 100%;
-      box-sizing: border-box;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-    }
-
-    .overlay-back-btn:hover {
-      border-color: #e0e0e0;
-      color: #fff;
+      margin: 0 -16px 0;
+      display: flex;
+      gap: 6px;
     }
 
     .overlay-line {
@@ -781,25 +767,18 @@
       font-size: 11px;
     }
 
-    .clear-history-btn {
-      background: none;
+    .scan-btn-danger {
       color: #ff3333;
-      border: 1px solid #ff3333;
-      padding: 7px 20px;
-      width: 100%;
-      box-sizing: border-box;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s, opacity 0.15s;
-      margin-top: 8px;
+      border-color: #ff3333;
     }
 
-    .clear-history-btn:hover {
-      opacity: 0.8;
+    .scan-btn-danger:hover {
+      color: #ff5555;
+      border-color: #ff5555;
+    }
+
+    .scan-btn-danger .btn-icon {
+      color: #ff3333;
     }
 
     /* ── Tech Fingerprint ────────────────────────── */
@@ -1029,7 +1008,9 @@
   <div id="empty" class="empty-state" style="display: none;">
     <div class="empty-title">No Target Acquired</div>
     <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
-    <button class="scan-btn-base" id="scan-btn" disabled><span class="btn-icon">&gt;</span>INITIATE SCAN</button>
+    <div class="empty-footer">
+      <button class="scan-btn-base" id="scan-btn" disabled><span class="btn-icon">&gt;</span>SCAN</button>
+    </div>
   </div>
 
   <!-- ── About Page ──────────────────────────── -->
@@ -1060,7 +1041,7 @@
     <div class="overlay-line"><span class="dim">> Stack multiplier + clean signal bonuses</span></div>
 
     <div class="overlay-footer">
-      <button class="overlay-back-btn" id="about-back">[ BACK ]</button>
+      <button class="scan-btn-base" id="about-back"><span class="btn-icon">&lt;</span>BACK</button>
     </div>
   </div>
 
@@ -1147,7 +1128,7 @@
     <div class="overlay-line"><span class="dim">Final score = sum of capped categories × multiplier − clean bonuses, clamped to 0-100</span></div>
 
     <div class="overlay-footer">
-      <button class="overlay-back-btn" id="howitworks-back">[ BACK ]</button>
+      <button class="scan-btn-base" id="howitworks-back"><span class="btn-icon">&lt;</span>BACK</button>
     </div>
   </div>
 
@@ -1156,8 +1137,8 @@
     <div class="overlay-section-header">// Scan History</div>
     <div id="history-list"></div>
     <div class="overlay-footer">
-      <button class="clear-history-btn" id="history-clear">[ CLEAR HISTORY ]</button>
-      <button class="overlay-back-btn" id="history-back">[ BACK ]</button>
+      <button class="scan-btn-base scan-btn-danger" id="history-clear"><span class="btn-icon">x</span>CLEAR</button>
+      <button class="scan-btn-base" id="history-back"><span class="btn-icon">&lt;</span>BACK</button>
     </div>
   </div>
 
@@ -1166,7 +1147,7 @@
     <div class="overlay-section-header">// Deep Scan Results</div>
     <div id="deepscan-results"></div>
     <div class="overlay-footer">
-      <button class="overlay-back-btn" id="deepscan-back">[ BACK TO RESULTS ]</button>
+      <button class="scan-btn-base" id="deepscan-back"><span class="btn-icon">&lt;</span>BACK</button>
     </div>
   </div>
 

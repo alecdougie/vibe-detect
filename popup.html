@@ -11,15 +11,31 @@
 
     body {
       width: 400px;
-      min-height: 200px;
+      height: 600px;
       font-family: "IBM Plex Mono", "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
       background: #1a1a1a;
       color: #e0e0e0;
       padding: 0;
+      padding-bottom: 46px;
       font-size: 11px;
       line-height: 1.5;
       position: relative;
       overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    body::-webkit-scrollbar {
+      width: 4px;
+    }
+    body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    body::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 2px;
+    }
+    body:hover::-webkit-scrollbar-thumb {
+      background: #444;
     }
 
 
@@ -397,23 +413,26 @@
       color: #1f1f1f;
     }
 
-    /* ── Footer ───────────────────────────────────── */
-    .footer {
-      position: sticky;
+    /* ── Footer (fixed bottom bar for all pages) ──── */
+    .footer, .overlay-footer, .scan-state-footer, .empty-footer {
+      position: fixed;
       bottom: 0;
+      left: 0;
+      right: 0;
       padding: 10px 16px 12px;
       border-top: 1px solid #333;
-      text-align: center;
       background: #1a1a1a;
       z-index: 10;
+      display: flex;
+      gap: 6px;
     }
 
-    .rescan-btn {
+    .scan-btn-base {
       background: none;
       color: #e0e0e0;
       border: 1px solid #555;
-      padding: 7px 20px;
-      width: 100%;
+      padding: 7px 10px;
+      flex: 1;
       box-sizing: border-box;
       font-family: inherit;
       font-size: 11px;
@@ -424,20 +443,29 @@
       transition: border-color 0.15s, color 0.15s;
     }
 
-    .rescan-btn:hover {
+    .scan-btn-base:hover {
       border-color: #e0e0e0;
       color: #fff;
     }
 
-    .rescan-btn:active {
+    .scan-btn-base:active {
       border-color: #ffaa00;
       color: #ffaa00;
     }
 
-    .rescan-btn:disabled {
+    .scan-btn-base:disabled {
       color: #444;
       border-color: #333;
       cursor: not-allowed;
+    }
+
+    .btn-icon {
+      margin-right: 8px;
+      color: #888;
+    }
+
+    .scan-btn-base:hover .btn-icon {
+      color: #e0e0e0;
     }
 
     /* ── Category Breakdown ─────────────────────────── */
@@ -514,10 +542,6 @@
     }
 
     .scan-state-footer {
-      text-align: center;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #333;
     }
 
     .loading-line {
@@ -563,8 +587,11 @@
 
     /* ── Empty State ──────────────────────────────── */
     .empty-state {
-      padding: 30px 16px;
+      padding: 30px 16px 0;
       text-align: center;
+    }
+
+    .empty-footer {
     }
 
     .empty-divider {
@@ -634,26 +661,7 @@
       border-bottom: 1px solid #333;
     }
 
-    .overlay-back-btn {
-      background: none;
-      color: #e0e0e0;
-      border: 1px solid #555;
-      padding: 7px 20px;
-      width: 100%;
-      box-sizing: border-box;
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
-      margin-top: 16px;
-    }
-
-    .overlay-back-btn:hover {
-      border-color: #e0e0e0;
-      color: #fff;
+    .overlay-footer {
     }
 
     .overlay-line {
@@ -697,6 +705,203 @@
       height: 8px;
     }
 
+    /* ── History Entries ──────────────────────────── */
+    .history-entry {
+      padding: 8px 0;
+      border-bottom: 1px dashed #2a2a2a;
+    }
+
+    .history-entry:last-child {
+      border-bottom: none;
+    }
+
+    .history-entry-top {
+      display: flex;
+      align-items: baseline;
+      font-size: 11px;
+    }
+
+    .history-hostname {
+      color: #e0e0e0;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .history-dots {
+      color: #2a2a2a;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .history-score {
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .history-meta {
+      font-size: 10px;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .history-trend {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    .trend-up { color: #ff3333; }
+    .trend-down { color: #33ff33; }
+    .trend-same { color: #666; }
+
+    .history-empty {
+      text-align: center;
+      color: #555;
+      padding: 24px 0;
+      font-size: 11px;
+    }
+
+    .scan-btn-danger {
+      color: #ff3333;
+      border-color: #ff3333;
+    }
+
+    .scan-btn-danger:hover {
+      color: #ff5555;
+      border-color: #ff5555;
+    }
+
+    .scan-btn-danger .btn-icon {
+      color: #ff3333;
+    }
+
+    /* ── Tech Fingerprint ────────────────────────── */
+    .tech-fingerprint {
+      padding: 0 16px 16px;
+      border-bottom: 1px solid #333;
+    }
+
+    .tech-fingerprint-header {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 16px;
+      margin: 0 -16px 12px;
+      border-bottom: 1px solid #333;
+    }
+
+    .tech-group-header {
+      font-size: 10px;
+      font-weight: 700;
+      color: #ffaa00;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+
+    .tech-group-header:first-child {
+      margin-top: 0;
+    }
+
+    .tech-item {
+      font-size: 11px;
+      color: #4a9eff;
+      padding-left: 12px;
+      line-height: 1.6;
+    }
+
+    .tech-item .tech-icon {
+      color: #555;
+      margin-right: 4px;
+    }
+
+    /* ── Trend Line (Results Page) ─────────────── */
+    .trend-line {
+      margin-top: 8px;
+      padding: 6px 0;
+      border-top: 1px dashed #333;
+      font-size: 10px;
+    }
+
+    .trend-line .trend-label {
+      color: #666;
+    }
+
+    /* ── Deep Scan Button (extends scan-btn-base) ── */
+    .deep-scan-btn {
+      position: relative;
+    }
+
+    /* ── Deep Scan Tooltip ────────────────────── */
+    .deep-scan-btn .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 10px;
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: normal;
+      width: 200px;
+      line-height: 1.4;
+      z-index: 200;
+      transition: opacity 0.15s, visibility 0.15s;
+      pointer-events: none;
+    }
+
+    .deep-scan-btn:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* ── Deep Scan Results ─────────────────────── */
+    .deepscan-page-row {
+      display: flex;
+      align-items: baseline;
+      font-size: 11px;
+      padding: 3px 0;
+    }
+
+    .deepscan-path {
+      color: #e0e0e0;
+      flex-shrink: 0;
+    }
+
+    .deepscan-dots {
+      color: #2a2a2a;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .deepscan-score {
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .deepscan-aggregate {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      margin: 8px 0;
+    }
+
+    .deepscan-meta {
+      font-size: 10px;
+      color: #666;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
     .scoring-cat-header {
       font-size: 11px;
       font-weight: 700;
@@ -727,10 +932,11 @@
     <div class="menu-dropdown" id="menu-dropdown">
       <button class="menu-item" id="menu-export"><span class="menu-item-label">&gt;</span>Export Report (JSON)</button>
       <button class="menu-item" id="menu-share"><span class="menu-item-label">&gt;</span>Share Report (Image)</button>
+      <button class="menu-item" id="menu-history"><span class="menu-item-label">&gt;</span>Scan History</button>
       <button class="menu-item" id="menu-howitworks"><span class="menu-item-label">&gt;</span>How It Works</button>
       <button class="menu-item" id="menu-about"><span class="menu-item-label">&gt;</span>About VIBE-DETECT</button>
     </div>
-    <div class="header-border">+-----[ VIBE-DETECT v1.0.3 ]-----+</div>
+    <div class="header-border">+-----[ VIBE-DETECT v1.1.0 ]-----+</div>
     <div class="header-title">Vibe Code Detector</div>
     <div class="header-meta">INTERNET SLOP ENGINE ACTIVE</div>
   </div>
@@ -738,13 +944,14 @@
   <div id="ready" class="scan-state">
     <div class="scan-state-header">// System Status</div>
     <div class="scan-state-body">
-      <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.3 initialized</div>
+      <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.1.0 initialized</div>
       <div class="loading-line">> This thing was vibe coded, mistakes probable</div>
       <div class="loading-line">> Target acquired.</div>
       <div class="loading-line">> Awaiting command<span class="cursor-blink"></span></div>
     </div>
     <div class="scan-state-footer">
-      <button class="rescan-btn" id="ready-scan-btn">[ INITIATE SCAN ]</button>
+      <button class="scan-btn-base" id="ready-scan-btn"><span class="btn-icon">&gt;</span>SCAN</button>
+      <button class="scan-btn-base deep-scan-btn" id="ready-deep-scan-btn"><span class="btn-icon">&gt;&gt;</span>DEEP SCAN<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 
@@ -776,20 +983,28 @@
       <div id="category-breakdown"></div>
     </div>
 
+    <div class="tech-fingerprint" id="tech-fingerprint" style="display:none">
+      <div class="tech-fingerprint-header">// Tech Stack Fingerprint</div>
+      <div id="tech-fingerprint-content"></div>
+    </div>
+
     <div class="signals-section">
       <div class="signals-header">// Intercepted Signals</div>
       <div class="signals-list" id="signals-list"></div>
     </div>
 
     <div class="footer">
-      <button class="rescan-btn" id="rescan">[ RESCAN ]</button>
+      <button class="scan-btn-base" id="rescan"><span class="btn-icon">&gt;</span>RESCAN</button>
+      <button class="scan-btn-base deep-scan-btn" id="deep-scan-btn" style="display:none"><span class="btn-icon">&gt;&gt;</span>DEEP SCAN<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 
   <div id="empty" class="empty-state" style="display: none;">
     <div class="empty-title">No Target Acquired</div>
     <div class="empty-desc">Navigate to a website and<br>activate scan protocol.</div>
-    <button class="rescan-btn" id="scan-btn" disabled>[ INITIATE SCAN ]</button>
+    <div class="empty-footer">
+      <button class="scan-btn-base" id="scan-btn" disabled><span class="btn-icon">&gt;</span>SCAN</button>
+    </div>
   </div>
 
   <!-- ── About Page ──────────────────────────── -->
@@ -819,7 +1034,9 @@
     <div class="overlay-line"><span class="dim">> Heuristic scoring with category caps</span></div>
     <div class="overlay-line"><span class="dim">> Stack multiplier + clean signal bonuses</span></div>
 
-    <button class="overlay-back-btn" id="about-back">[ BACK ]</button>
+    <div class="overlay-footer">
+      <button class="scan-btn-base" id="about-back"><span class="btn-icon">&lt;</span>BACK</button>
+    </div>
   </div>
 
   <!-- ── How It Works Page ─────────────────────── -->
@@ -904,7 +1121,28 @@
 
     <div class="overlay-line"><span class="dim">Final score = sum of capped categories × multiplier − clean bonuses, clamped to 0-100</span></div>
 
-    <button class="overlay-back-btn" id="howitworks-back">[ BACK ]</button>
+    <div class="overlay-footer">
+      <button class="scan-btn-base" id="howitworks-back"><span class="btn-icon">&lt;</span>BACK</button>
+    </div>
+  </div>
+
+  <!-- ── Scan History Page ──────────────────────── -->
+  <div id="history-page" class="overlay-page">
+    <div class="overlay-section-header">// Scan History</div>
+    <div id="history-list"></div>
+    <div class="overlay-footer">
+      <button class="scan-btn-base scan-btn-danger" id="history-clear"><span class="btn-icon">x</span>CLEAR</button>
+      <button class="scan-btn-base" id="history-back"><span class="btn-icon">&lt;</span>BACK</button>
+    </div>
+  </div>
+
+  <!-- ── Deep Scan Results Page ───────────────────── -->
+  <div id="deepscan-page" class="overlay-page">
+    <div class="overlay-section-header">// Deep Scan Results</div>
+    <div id="deepscan-results"></div>
+    <div class="overlay-footer">
+      <button class="scan-btn-base" id="deepscan-back"><span class="btn-icon">&lt;</span>BACK</button>
+    </div>
   </div>
 
   <div id="export-toast" class="export-toast"></div>

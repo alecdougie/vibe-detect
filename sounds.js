@@ -129,5 +129,24 @@ const SoundEngine = (() => {
     playNoise(0.12, 0.03, 0.2);
   }
 
-  return { scanning, results, click, alert, isMuted, setMuted };
+  // ── 5. DEEP SCAN COMPLETE: triumphant multi-tone ────────
+  // Extended confirmation — multi-page analysis finished
+  function deepComplete() {
+    if (muted) return;
+
+    // Rising triumphant sequence
+    playTone(440, "square", 0.1, 0.04, 0);
+    playTone(550, "square", 0.1, 0.04, 0.1);
+    playTone(660, "square", 0.1, 0.05, 0.2);
+    playTone(880, "square", 0.3, 0.06, 0.3);
+
+    // Resonance chord
+    playTone(220, "triangle", 0.6, 0.03, 0.3);
+    playTone(330, "triangle", 0.5, 0.02, 0.35);
+
+    // Data lock
+    playNoise(0.1, 0.02, 0.4);
+  }
+
+  return { scanning, results, click, alert, deepComplete, isMuted, setMuted };
 })();

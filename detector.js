@@ -1025,6 +1025,9 @@
     // Compute composite score
     const scoring = computeScore();
 
+    // Collect internal links for deep scan
+    const internalLinks = collectInternalLinks();
+
     const result = {
       url: window.location.href,
       hostname: window.location.hostname,
@@ -1037,10 +1040,45 @@
       categoryScores: scoring.categoryScores,
       totalSignals: signals.length,
       timestamp: Date.now(),
+      internalLinks,
     };
 
     chrome.runtime.sendMessage({ type: "VIBE_RESULT", data: result });
     return result;
+  }
+
+  // ── Internal Link Collection (for Deep Scan) ─────────────
+
+  function collectInternalLinks() {
+    const hostname = window.location.hostname;
+    const currentPath = window.location.pathname;
+    const seen = new Set();
+    seen.add(currentPath);
+
+    const links = [];
+    const anchors = document.querySelectorAll("a[href]");
+
+    for (const a of anchors) {
+      try {
+        const url = new URL(a.href, window.location.origin);
+        // Same hostname, not an anchor-only link, not current page
+        if (
+          url.hostname === hostname &&
+          url.pathname !== currentPath &&
+          !seen.has(url.pathname) &&
+          !url.hash.length &&
+          url.protocol.startsWith("http")
+        ) {
+          seen.add(url.pathname);
+          links.push(url.href);
+          if (links.length >= 20) break;
+        }
+      } catch (e) {
+        // Skip malformed URLs
+      }
+    }
+
+    return links;
   }
 
   setTimeout(runAnalysis, 500);

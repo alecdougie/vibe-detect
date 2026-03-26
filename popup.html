@@ -9,18 +9,14 @@
       box-sizing: border-box;
     }
 
-    html {
-      height: 100%;
-    }
-
     body {
       width: 400px;
-      min-height: 200px;
-      max-height: 600px;
+      height: 600px;
       font-family: "IBM Plex Mono", "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
       background: #1a1a1a;
       color: #e0e0e0;
       padding: 0;
+      padding-bottom: 46px;
       font-size: 11px;
       line-height: 1.5;
       position: relative;
@@ -403,17 +399,18 @@
       color: #1f1f1f;
     }
 
-    /* ── Footer (shared base for all sticky bottoms) ── */
+    /* ── Footer (fixed bottom bar for all pages) ──── */
     .footer, .overlay-footer, .scan-state-footer, .empty-footer {
-      position: sticky;
+      position: fixed;
       bottom: 0;
+      left: 0;
+      right: 0;
       padding: 10px 16px 12px;
       border-top: 1px solid #333;
       background: #1a1a1a;
       z-index: 10;
       display: flex;
       gap: 6px;
-      flex-shrink: 0;
     }
 
     .scan-btn-base {
@@ -531,9 +528,6 @@
     }
 
     .scan-state-footer {
-      margin-top: 16px;
-      margin-left: -16px;
-      margin-right: -16px;
     }
 
     .loading-line {
@@ -584,7 +578,6 @@
     }
 
     .empty-footer {
-      margin-top: 16px;
     }
 
     .empty-divider {
@@ -655,7 +648,6 @@
     }
 
     .overlay-footer {
-      margin: 16px -16px 0;
     }
 
     .overlay-line {

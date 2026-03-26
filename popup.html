@@ -406,6 +406,12 @@
       text-align: center;
       background: #1a1a1a;
       z-index: 10;
+      display: flex;
+      gap: 6px;
+    }
+
+    .footer-single {
+      display: block;
     }
 
     .rescan-btn {
@@ -518,6 +524,8 @@
       margin-top: 16px;
       padding-top: 16px;
       border-top: 1px solid #333;
+      display: flex;
+      gap: 6px;
     }
 
     .loading-line {
@@ -844,17 +852,17 @@
       background: none;
       color: #888;
       border: 1px dashed #444;
-      padding: 7px 20px;
-      width: 100%;
+      padding: 7px 10px;
+      flex: 1;
       box-sizing: border-box;
       font-family: inherit;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
       transition: border-color 0.15s, color 0.15s;
-      margin-top: 6px;
+      position: relative;
     }
 
     .deep-scan-btn:hover {
@@ -866,6 +874,39 @@
       color: #444;
       border-color: #333;
       cursor: not-allowed;
+    }
+
+    /* ── Deep Scan Tooltip ────────────────────── */
+    .deep-scan-btn .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      color: #aaa;
+      border: 1px solid #444;
+      padding: 6px 10px;
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: normal;
+      width: 200px;
+      line-height: 1.4;
+      z-index: 200;
+      transition: opacity 0.15s, visibility 0.15s;
+      pointer-events: none;
+    }
+
+    .deep-scan-btn:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .rescan-btn {
+      flex: 1;
     }
 
     /* ── Deep Scan Results ─────────────────────── */
@@ -949,13 +990,14 @@
   <div id="ready" class="scan-state">
     <div class="scan-state-header">// System Status</div>
     <div class="scan-state-body">
-      <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.0.3 initialized</div>
+      <div class="loading-line">> <span class="hl">VIBE-DETECT</span> v1.1.0 initialized</div>
       <div class="loading-line">> This thing was vibe coded, mistakes probable</div>
       <div class="loading-line">> Target acquired.</div>
       <div class="loading-line">> Awaiting command<span class="cursor-blink"></span></div>
     </div>
     <div class="scan-state-footer">
       <button class="rescan-btn" id="ready-scan-btn">[ INITIATE SCAN ]</button>
+      <button class="deep-scan-btn" id="ready-deep-scan-btn">[ DEEP SCAN ]<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 
@@ -999,7 +1041,7 @@
 
     <div class="footer">
       <button class="rescan-btn" id="rescan">[ RESCAN ]</button>
-      <button class="deep-scan-btn" id="deep-scan-btn" style="display:none">[ DEEP SCAN (5 PAGES) ]</button>
+      <button class="deep-scan-btn" id="deep-scan-btn" style="display:none">[ DEEP SCAN ]<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span></button>
     </div>
   </div>
 

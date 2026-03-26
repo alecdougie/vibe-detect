@@ -434,14 +434,21 @@ function renderResults(data) {
   // Trend detection (async — renders when ready)
   renderTrendLine(hostname, vibeScore);
 
-  // Deep scan button
+  // Deep scan button — always visible, update page count
   const deepScanBtn = document.getElementById("deep-scan-btn");
-  if (deepScanBtn && data.internalLinks && data.internalLinks.length > 0) {
+  if (deepScanBtn) {
     deepScanBtn.style.display = "block";
-    deepScanBtn.textContent = "[ DEEP SCAN (" + Math.min(5, data.internalLinks.length) + " PAGES) ]";
-    deepScanBtn.disabled = false;
-  } else if (deepScanBtn) {
-    deepScanBtn.style.display = "none";
+    const tooltip = deepScanBtn.querySelector(".tooltip");
+    if (data.internalLinks && data.internalLinks.length > 0) {
+      deepScanBtn.disabled = false;
+      // Preserve tooltip span, update text
+      deepScanBtn.innerHTML = "[ DEEP SCAN (" + Math.min(5, data.internalLinks.length) + " PG) ]" +
+        '<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span>';
+    } else {
+      deepScanBtn.disabled = true;
+      deepScanBtn.innerHTML = "[ NO LINKS ]" +
+        '<span class="tooltip">No internal links found on this page to deep scan.</span>';
+    }
   }
 }
 
@@ -855,6 +862,73 @@ document.getElementById("deep-scan-btn")?.addEventListener("click", () => {
   SoundEngine.click();
   startDeepScan();
 });
+
+document.getElementById("ready-deep-scan-btn")?.addEventListener("click", () => {
+  if (deepScanRunning) return;
+  SoundEngine.click();
+  startDeepScanFromReady();
+});
+
+function startDeepScanFromReady() {
+  // First do a normal scan to get internal links, then trigger deep scan
+  hasRendered = false;
+  document.getElementById("ready").style.display = "none";
+  document.getElementById("loading").style.display = "block";
+  document.getElementById("results").style.display = "none";
+  document.getElementById("empty").style.display = "none";
+  startLoadingBar();
+  SoundEngine.scanning();
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (!tabs[0] || !tabs[0].url || tabs[0].url.startsWith("chrome://")) {
+      stopLoadingBar();
+      showEmpty();
+      return;
+    }
+
+    const tab = tabs[0];
+    const tabId = tab.id;
+    const storageKey = "result_tab_" + tabId;
+    chrome.storage.local.remove([storageKey, "lastResult"]);
+
+    chrome.scripting.executeScript(
+      { target: { tabId }, files: ["detector.js"] },
+      () => {
+        let attempts = 0;
+        const pollInterval = setInterval(() => {
+          attempts++;
+          chrome.storage.local.get([storageKey, "lastResult"], (data) => {
+            const result = data[storageKey] || data.lastResult;
+            if (result && result.timestamp) {
+              clearInterval(pollInterval);
+              // Queue the result for display, then auto-trigger deep scan
+              pendingResult = result;
+              // Override: when loading bar finishes, render results then deep scan
+              const origRender = renderResults;
+              const waitForBar = setInterval(() => {
+                if (!loadingInterval) {
+                  clearInterval(waitForBar);
+                  renderResults(result);
+                  // Auto-trigger deep scan after a brief pause
+                  setTimeout(() => {
+                    if (currentResult && currentResult.internalLinks && currentResult.internalLinks.length > 0) {
+                      startDeepScan();
+                    } else {
+                      showToast("No internal links found for deep scan");
+                    }
+                  }, 300);
+                }
+              }, 100);
+            } else if (attempts >= 30) {
+              clearInterval(pollInterval);
+              stopLoadingBar();
+            }
+          });
+        }, 500);
+      }
+    );
+  });
+}
 
 function startDeepScan() {
   if (!currentResult || !currentResult.internalLinks || currentResult.internalLinks.length === 0) {

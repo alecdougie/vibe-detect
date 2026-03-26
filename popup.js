@@ -141,6 +141,128 @@ function renderCategoryBar(capped, cap) {
   return '<div class="cat-bar-fill" style="width:' + pct + '%;background:' + color + '"></div>';
 }
 
+// ── Tech Fingerprint Map ──────────────────────────────────
+
+const TECH_FINGERPRINT_MAP = {
+  "Next.js detected": { group: "FRAMEWORK", icon: "{=}", display: "Next.js" },
+  "React detected": { group: "FRAMEWORK", icon: "{=}", display: "React" },
+  "Vite build": { group: "FRAMEWORK", icon: "{=}", display: "Vite" },
+  "Astro detected": { group: "FRAMEWORK", icon: "{=}", display: "Astro" },
+  "Svelte detected": { group: "FRAMEWORK", icon: "{=}", display: "Svelte" },
+  "Vue/Nuxt detected": { group: "FRAMEWORK", icon: "{=}", display: "Vue / Nuxt" },
+  "shadcn/ui components": { group: "UI / STYLING", icon: "[#]", display: "shadcn/ui" },
+  "Radix UI primitives": { group: "UI / STYLING", icon: "[#]", display: "Radix UI" },
+  "Tailwind CSS": { group: "UI / STYLING", icon: "[~]", display: "Tailwind CSS" },
+  "Framer Motion": { group: "UI / STYLING", icon: "[~]", display: "Framer Motion" },
+  "Lucide icons": { group: "UI / STYLING", icon: "[*]", display: "Lucide Icons" },
+  "Default shadcn theme": { group: "UI / STYLING", icon: "[#]", display: "Default shadcn Theme" },
+  "Supabase client": { group: "BACKEND", icon: "[db]", display: "Supabase" },
+  "Firebase client": { group: "BACKEND", icon: "[db]", display: "Firebase" },
+  "Convex client": { group: "BACKEND", icon: "[db]", display: "Convex" },
+  "Clerk auth": { group: "BACKEND", icon: "[key]", display: "Clerk Auth" },
+  "Auth0 client": { group: "BACKEND", icon: "[key]", display: "Auth0" },
+  "Stripe client": { group: "BACKEND", icon: "[$]", display: "Stripe" },
+  "OpenAI API calls": { group: "AI TOOLS", icon: "[!]", display: "OpenAI API" },
+  "Anthropic API calls": { group: "AI TOOLS", icon: "[!]", display: "Anthropic API" },
+  "Free-tier hosting": { group: "HOSTING", icon: "[^]", display: "Free-Tier Hosting" },
+  "Vercel hosting (custom domain)": { group: "HOSTING", icon: "[^]", display: "Vercel" },
+  "Vercel Analytics": { group: "HOSTING", icon: "[^]", display: "Vercel Analytics" },
+};
+
+const FINGERPRINT_GROUP_ORDER = ["FRAMEWORK", "UI / STYLING", "BACKEND", "AI TOOLS", "HOSTING"];
+
+function renderTechFingerprint(signals) {
+  const container = document.getElementById("tech-fingerprint");
+  const content = document.getElementById("tech-fingerprint-content");
+  if (!container || !content) return;
+
+  const groups = {};
+
+  for (const signal of signals) {
+    const mapping = TECH_FINGERPRINT_MAP[signal.name];
+    if (mapping) {
+      if (!groups[mapping.group]) groups[mapping.group] = [];
+      groups[mapping.group].push(mapping);
+    }
+  }
+
+  if (Object.keys(groups).length === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  let html = "";
+  for (const group of FINGERPRINT_GROUP_ORDER) {
+    if (!groups[group]) continue;
+    html += '<div class="tech-group-header">[' + group + ']</div>';
+    for (const item of groups[group]) {
+      html += '<div class="tech-item"><span class="tech-icon">' + escapeHtml(item.icon) + '</span> ' + escapeHtml(item.display) + '</div>';
+    }
+  }
+
+  content.innerHTML = html;
+  container.style.display = "block";
+}
+
+// ── Trend Detection ─────────────────────────────────────
+
+function checkTrend(hostname, currentScore) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["scanHistory"], (store) => {
+      const history = store.scanHistory || [];
+      // Find previous scan of same hostname (skip the one we just logged)
+      const previous = history.find(
+        (e) => e.hostname === hostname && e.score !== currentScore
+      );
+      if (!previous) {
+        // Check for same score too (means no change)
+        const sameScore = history.filter((e) => e.hostname === hostname);
+        if (sameScore.length > 1) {
+          resolve({ previousScore: currentScore, delta: 0, direction: "same" });
+        } else {
+          resolve(null);
+        }
+        return;
+      }
+      const delta = currentScore - previous.score;
+      resolve({
+        previousScore: previous.score,
+        delta,
+        direction: delta > 0 ? "up" : delta < 0 ? "down" : "same",
+      });
+    });
+  });
+}
+
+function renderTrendLine(hostname, currentScore) {
+  // Insert trend line after verdict row in score section
+  const verdictRow = document.querySelector(".verdict-row");
+  if (!verdictRow) return;
+
+  // Remove existing trend line if any
+  const existing = document.querySelector(".trend-line");
+  if (existing) existing.remove();
+
+  checkTrend(hostname, currentScore).then((trend) => {
+    if (!trend) return;
+
+    const arrow = trend.direction === "up" ? "▲" : trend.direction === "down" ? "▼" : "◆";
+    const cssClass = trend.direction === "up" ? "trend-up" : trend.direction === "down" ? "trend-down" : "trend-same";
+    const deltaStr = trend.delta > 0 ? "+" + trend.delta : String(trend.delta);
+
+    const trendEl = document.createElement("div");
+    trendEl.className = "trend-line";
+    trendEl.innerHTML =
+      '<span class="trend-label">TREND: </span>' +
+      '<span class="' + cssClass + '">' +
+      'Previous: ' + trend.previousScore + ' → Now: ' + currentScore + '  ' +
+      arrow + ' ' + deltaStr +
+      '</span>';
+
+    verdictRow.after(trendEl);
+  });
+}
+
 let hasRendered = false;
 let currentResult = null;
 
@@ -304,6 +426,22 @@ function renderResults(data) {
 
     list.appendChild(showAllBtn);
     list.appendChild(notDetectedContainer);
+  }
+
+  // Tech fingerprint
+  renderTechFingerprint(signals);
+
+  // Trend detection (async — renders when ready)
+  renderTrendLine(hostname, vibeScore);
+
+  // Deep scan button
+  const deepScanBtn = document.getElementById("deep-scan-btn");
+  if (deepScanBtn && data.internalLinks && data.internalLinks.length > 0) {
+    deepScanBtn.style.display = "block";
+    deepScanBtn.textContent = "[ DEEP SCAN (" + Math.min(5, data.internalLinks.length) + " PAGES) ]";
+    deepScanBtn.disabled = false;
+  } else if (deepScanBtn) {
+    deepScanBtn.style.display = "none";
   }
 }
 
@@ -576,6 +714,185 @@ document.getElementById("howitworks-back")?.addEventListener("click", () => {
   hideOverlay();
 });
 
+document.getElementById("history-back")?.addEventListener("click", () => {
+  SoundEngine.click();
+  hideOverlay();
+});
+
+document.getElementById("deepscan-back")?.addEventListener("click", () => {
+  SoundEngine.click();
+  hideOverlay();
+});
+
+// ── Scan History ─────────────────────────────────────────
+
+document.getElementById("menu-history")?.addEventListener("click", () => {
+  SoundEngine.click();
+  menuDropdown.classList.remove("open");
+  showHistory();
+});
+
+document.getElementById("history-clear")?.addEventListener("click", () => {
+  SoundEngine.click();
+  chrome.storage.local.remove(["scanHistory"], () => {
+    showHistory(); // Re-render (will show empty state)
+    showToast("History cleared");
+  });
+});
+
+function formatRelativeDate(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (mins < 1) return "just now";
+  if (mins < 60) return mins + "m ago";
+  if (hours < 24) return hours + "h ago";
+  if (days < 7) return days + "d ago";
+  return new Date(timestamp).toLocaleDateString();
+}
+
+function showHistory() {
+  chrome.storage.local.get(["scanHistory"], (store) => {
+    const history = store.scanHistory || [];
+    const listEl = document.getElementById("history-list");
+    if (!listEl) return;
+
+    if (history.length === 0) {
+      listEl.innerHTML = '<div class="history-empty">> No scans recorded yet.<br>> Scan a website to begin.</div>';
+      showOverlay("history-page");
+      return;
+    }
+
+    // Build trend map: for each hostname, track score changes
+    const hostnameScores = {};
+    // Iterate in reverse (oldest first) to build chronological order
+    for (let i = history.length - 1; i >= 0; i--) {
+      const e = history[i];
+      if (!hostnameScores[e.hostname]) hostnameScores[e.hostname] = [];
+      hostnameScores[e.hostname].push(e.score);
+    }
+
+    let html = '<div class="overlay-line"><span class="dim">' + history.length + ' scan(s) recorded</span></div><hr class="overlay-divider">';
+
+    history.forEach((entry) => {
+      const scoreColor = getScoreColor(entry.score);
+      const scores = hostnameScores[entry.hostname];
+
+      html += '<div class="history-entry">';
+      html += '<div class="history-entry-top">';
+      html += '<span class="history-hostname">' + escapeHtml(entry.hostname) + '</span>';
+      html += '<span class="history-dots">' + ".".repeat(80) + '</span>';
+      html += '<span class="history-score" style="color:' + scoreColor + '">' + entry.score + '/100</span>';
+      html += '</div>';
+      html += '<div class="history-meta">' + entry.verdict + ' | ' + entry.signalCount + ' signals | ' + formatRelativeDate(entry.timestamp) + '</div>';
+
+      // Show trend if multiple scans exist for this hostname
+      if (scores.length > 1) {
+        const idx = scores.indexOf(entry.score);
+        if (idx > 0) {
+          const prev = scores[idx - 1];
+          const delta = entry.score - prev;
+          if (delta !== 0) {
+            const arrow = delta > 0 ? "▲" : "▼";
+            const cls = delta > 0 ? "trend-up" : "trend-down";
+            const sign = delta > 0 ? "+" : "";
+            html += '<div class="history-trend ' + cls + '">' + arrow + ' ' + sign + delta + ' from previous scan</div>';
+          }
+        }
+      }
+
+      html += '</div>';
+    });
+
+    listEl.innerHTML = html;
+    showOverlay("history-page");
+  });
+}
+
+// ── Deep Scan ────────────────────────────────────────────
+
+let deepScanRunning = false;
+
+document.getElementById("deep-scan-btn")?.addEventListener("click", () => {
+  if (deepScanRunning || !currentResult || !currentResult.internalLinks) return;
+  SoundEngine.click();
+  startDeepScan();
+});
+
+function startDeepScan() {
+  if (!currentResult || !currentResult.internalLinks || currentResult.internalLinks.length === 0) {
+    showToast("No internal links found");
+    return;
+  }
+
+  deepScanRunning = true;
+  const btn = document.getElementById("deep-scan-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "[ SCANNING... ]";
+  }
+
+  SoundEngine.scanning();
+
+  chrome.runtime.sendMessage({
+    type: "DEEP_SCAN_START",
+    urls: currentResult.internalLinks,
+    hostname: currentResult.hostname,
+  });
+}
+
+// Listen for deep scan progress and completion
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "DEEP_SCAN_PROGRESS") {
+    const btn = document.getElementById("deep-scan-btn");
+    if (btn) {
+      btn.textContent = "[ SCANNING " + msg.current + "/" + msg.total + "... ]";
+    }
+  }
+
+  if (msg.type === "DEEP_SCAN_COMPLETE") {
+    deepScanRunning = false;
+    SoundEngine.deepComplete();
+    renderDeepScanResults(msg.data);
+  }
+});
+
+function renderDeepScanResults(data) {
+  const container = document.getElementById("deepscan-results");
+  if (!container) return;
+
+  const scoreColor = getScoreColor(data.aggregateScore);
+
+  let html = '';
+  html += '<div class="deepscan-aggregate" style="color:' + scoreColor + '">' + data.aggregateScore + '/100</div>';
+  html += '<div class="deepscan-meta">Aggregate score across ' + data.totalPagesScanned + ' page(s) of ' + data.internalLinksFound + ' found</div>';
+  html += '<hr class="overlay-divider">';
+
+  for (const page of data.pages) {
+    const path = new URL(page.url).pathname;
+    const pColor = getScoreColor(page.score);
+    html += '<div class="deepscan-page-row">';
+    html += '<span class="deepscan-path">' + escapeHtml(path) + '</span>';
+    html += '<span class="deepscan-dots">' + ".".repeat(80) + '</span>';
+    html += '<span class="deepscan-score" style="color:' + pColor + '">' + page.score + '</span>';
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Reset deep scan button
+  const btn = document.getElementById("deep-scan-btn");
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = "[ DEEP SCAN COMPLETE ]";
+  }
+
+  showOverlay("deepscan-page");
+}
+
 // ── Toast notification ───────────────────────────────────
 
 function showToast(message) {
@@ -596,7 +913,7 @@ function buildExportJSON(data) {
   return {
     meta: {
       tool: "VIBE-DETECT",
-      version: "1.0.3",
+      version: "1.1.0",
       exportedAt: new Date().toISOString(),
     },
     target: {
@@ -732,7 +1049,7 @@ async function exportImage() {
   ctx.fillStyle = "#555";
   ctx.font = "10px " + FONT;
   ctx.textAlign = "center";
-  ctx.fillText("+-----[ VIBE-DETECT v1.0.3 ]-----+", W / 2, y);
+  ctx.fillText("+-----[ VIBE-DETECT v1.1.0 ]-----+", W / 2, y);
 
   y += 24;
   ctx.fillStyle = TEXT;
@@ -903,7 +1220,7 @@ async function exportImage() {
   ctx.fillStyle = "#555";
   ctx.font = "10px " + FONT;
   ctx.textAlign = "center";
-  ctx.fillText("Generated by VIBE-DETECT v1.0.3", W / 2, y);
+  ctx.fillText("Generated by VIBE-DETECT v1.1.0", W / 2, y);
   y += 16;
   ctx.fillText("Download on Chrome today :]", W / 2, y);
   ctx.textAlign = "left";

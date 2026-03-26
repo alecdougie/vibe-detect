@@ -24,6 +24,20 @@
       overflow-y: auto;
     }
 
+    body::-webkit-scrollbar {
+      width: 4px;
+    }
+    body::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    body::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: 2px;
+    }
+    body:hover::-webkit-scrollbar-thumb {
+      background: #444;
+    }
+
 
     /* ── CRT Flicker on load ──────────────────────── */
     body {

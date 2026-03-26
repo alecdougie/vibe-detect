@@ -440,11 +440,11 @@ function renderResults(data) {
     deepScanBtn.style.display = "block";
     if (data.internalLinks && data.internalLinks.length > 0) {
       deepScanBtn.disabled = false;
-      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>DEEP SCAN (' + Math.min(5, data.internalLinks.length) + ' PG)' +
-        '<span class="tooltip">Scans up to 5 internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span>';
+      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>DEEP SCAN' +
+        '<span class="tooltip">Scans up to ' + Math.min(5, data.internalLinks.length) + ' internal pages on this site using background tabs. Requires additional browser permissions (tab access + host access).</span>';
     } else {
       deepScanBtn.disabled = true;
-      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>NO LINKS' +
+      deepScanBtn.innerHTML = '<span class="btn-icon">&gt;&gt;</span>DEEP SCAN' +
         '<span class="tooltip">No internal links found on this page to deep scan.</span>';
     }
   }
